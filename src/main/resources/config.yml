@@ -1,0 +1,13 @@
+recipe:
+  shape:
+    - "CRC"
+    - "CHC"
+    - " C "
+  translations:
+    c: minecraft:copper_ingot
+    r: minecraft:comparator
+    h: minecraft:hopper
+
+item:
+  name: "Sorting Hopper"
+  lore: ""
