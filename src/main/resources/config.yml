@@ -11,3 +11,4 @@ recipe:
 item:
   name: "Sorting Hopper"
   lore: ""
+  custom-model-data: -1

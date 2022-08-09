@@ -13,8 +13,8 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class HopperSort extends JavaPlugin {
-    private Config config = new Config(this);
-    private NamespacedKey hopperKey = new NamespacedKey(this, "hopper");
+    private final Config config = new Config(this);
+    private final NamespacedKey hopperKey = new NamespacedKey(this, "hopper");
 
     @Override
     public void onEnable() {
@@ -41,6 +41,10 @@ public class HopperSort extends JavaPlugin {
         }
 
         meta.getPersistentDataContainer().set(hopperKey, PersistentDataType.BYTE, (byte) 1);
+        if (config.customModelData >= 1) {
+            meta.setCustomModelData(config.customModelData);
+        }
+
         item.setItemMeta(meta);
 
         ShapedRecipe recipe = new ShapedRecipe(hopperKey, item);

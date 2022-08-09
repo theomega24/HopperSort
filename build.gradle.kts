@@ -5,15 +5,15 @@ plugins {
 }
 
 group = "dev.omega24.hoppersort"
-version = "0.1.0"
+version = "0.2.0-SNAPSHOT"
 
 dependencies {
-    paperDevBundle("1.19-R0.1-SNAPSHOT")
+    paperDevBundle("1.19.2-R0.1-SNAPSHOT")
 }
 
 tasks {
     runServer {
-        minecraftVersion("1.19")
+        minecraftVersion("1.19.2")
     }
 
     reobfJar {

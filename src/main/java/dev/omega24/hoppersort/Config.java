@@ -5,7 +5,6 @@ import com.google.common.collect.Maps;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.InvalidConfigurationException;
 
 import java.util.List;
@@ -24,6 +23,7 @@ public class Config {
 
     public Component itemName;
     public List<Component> itemLore = Lists.newArrayList();
+    public int customModelData = -1;
 
     public void load() throws InvalidConfigurationException {
         recipe = plugin.getConfig().getStringList("recipe.shape");
@@ -40,5 +40,6 @@ public class Config {
 
         itemName = MiniMessage.miniMessage().deserialize(plugin.getConfig().getString("item.name"));
         plugin.getConfig().getStringList("item.lore").forEach(line -> itemLore.add(MiniMessage.miniMessage().deserialize(line)));
+        customModelData = plugin.getConfig().getInt("item.custom-model-data");
     }
 }

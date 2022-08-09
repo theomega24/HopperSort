@@ -21,9 +21,9 @@ public class BlockListeners implements Listener {
         this.plugin = plugin;
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent event) {
-        if (event.getItemInHand().getItemMeta().getPersistentDataContainer().has(plugin.getHopperKey()) && event.getItemInHand().getItemMeta().getPersistentDataContainer().get(plugin.getHopperKey(), PersistentDataType.BYTE) == 1) {
+        if (event.getItemInHand().getItemMeta().getPersistentDataContainer().has(plugin.getHopperKey())) {
             ((TileState) event.getBlock().getState(false)).getPersistentDataContainer().set(plugin.getHopperKey(), PersistentDataType.BYTE, (byte) 1);
         }
     }
@@ -39,25 +39,23 @@ public class BlockListeners implements Listener {
         }
 
         if (hopper.getPersistentDataContainer().has(plugin.getHopperKey(), PersistentDataType.BYTE)) {
-            if (hopper.getPersistentDataContainer().get(plugin.getHopperKey(), PersistentDataType.BYTE) == 1) {
-                event.getBlock().getDrops(event.getPlayer().getInventory().getItemInMainHand()).forEach(item -> {
-                    ItemMeta meta = item.getItemMeta();
-                    meta.getPersistentDataContainer().set(plugin.getHopperKey(), PersistentDataType.BYTE, (byte) 1);
-                    item.setItemMeta(meta);
+            event.getBlock().getDrops(event.getPlayer().getInventory().getItemInMainHand()).forEach(item -> {
+                ItemMeta meta = item.getItemMeta();
+                meta.getPersistentDataContainer().set(plugin.getHopperKey(), PersistentDataType.BYTE, (byte) 1);
+                item.setItemMeta(meta);
 
-                    event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(), item);
-                });
+                event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(), item);
+            });
 
-                for (ItemStack content : hopper.getInventory().getContents()) {
-                    if (content == null) {
-                        continue;
-                    }
-
-                    event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(), content);
+            for (ItemStack content : hopper.getInventory().getContents()) {
+                if (content == null) {
+                    continue;
                 }
 
-                event.setDropItems(false);
+                event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(), content);
             }
+
+            event.setDropItems(false);
         }
     }
 }
