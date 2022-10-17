@@ -2,14 +2,14 @@ package dev.omega24.hoppersort.listener;
 
 import dev.omega24.hoppersort.HopperSort;
 import dev.omega24.hoppersort.hacks.HSInventoryMoveItemEvent;
+import dev.omega24.hoppersort.hacks.HSInventoryPickupItemEvent;
 import org.bukkit.block.Hopper;
+import org.bukkit.entity.Item;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.inventory.InventoryPickupItemEvent;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.persistence.PersistentDataType;
 
 public class HopperListeners implements Listener {
     private final HopperSort plugin;
@@ -18,96 +18,55 @@ public class HopperListeners implements Listener {
         this.plugin = plugin;
     }
 
-    // todo: this ends up adding a new filter in many cases, handle the logic ourselves :'(
     @EventHandler(ignoreCancelled = true)
     public void onInventoryPickupItem(InventoryPickupItemEvent event) {
-        if (!(event.getInventory().getHolder(false) instanceof Hopper hopper)) {
+        if (event instanceof HSInventoryPickupItemEvent) {
             return;
         }
 
-        if (!hopper.getPersistentDataContainer().has(plugin.getHopperKey(), PersistentDataType.BYTE)) {
+        if (!(event.getInventory().getHolder(false) instanceof Hopper hopper && hopper.getPersistentDataContainer().has(plugin.getHopperKey()))) {
             return;
         }
 
-        boolean canPickup = false;
-        for (ItemStack item : hopper.getInventory().getContents()) {
-            if (item == null) {
+        boolean shouldPickup = false;
+        ItemStack item = event.getItem().getItemStack();
+
+        for (ItemStack content : event.getInventory().getContents()) {
+            if (content == null || content.getMaxStackSize() == content.getAmount() || !content.isSimilar(item)) {
                 continue;
             }
 
-            if (event.getItem().getItemStack().getMaxStackSize() == 1) {
-                continue;
-            }
+            int newAmount = content.getAmount() + item.getAmount();
+            if (newAmount > content.getMaxStackSize()) {
+                int amount = newAmount - content.getMaxStackSize();
 
-            if (event.getItem().getItemStack().getType() == item.getType()) {
-                canPickup = true;
-                break;
+                Item newItem = event.getItem();
+                newItem.setItemStack(item.asQuantity(amount));
+
+                HSInventoryPickupItemEvent newEvent = new HSInventoryPickupItemEvent(event.getInventory(), newItem);
+                if (newEvent.callEvent()) {
+                    event.getItem().setItemStack(item.clone().subtract(amount));
+                    event.getInventory().addItem(item.asQuantity(amount));
+                }
+            } else {
+                shouldPickup = true;
             }
+            break;
         }
 
-        if (!canPickup) {
+        if (!shouldPickup) {
             event.setCancelled(true);
         }
     }
 
-    // todo: properly replicate vanilla behaviour (down before sideways)
     @EventHandler(ignoreCancelled = true)
     public void onInventoryMoveItem(InventoryMoveItemEvent event) {
         if (event instanceof HSInventoryMoveItemEvent) {
             return;
         }
 
-        if (event.getSource().getHolder(false) instanceof Hopper hopper) {
-            if (!hopper.getPersistentDataContainer().has(plugin.getHopperKey(), PersistentDataType.BYTE)) {
-                return;
-            }
-
-            event.setCancelled(true);
-            int amount = event.getItem().getAmount();
-
-            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-                for (ItemStack item : hopper.getInventory().getContents()) {
-                    if (item == null || item.getAmount() == 1) {
-                        continue;
-                    }
-
-                    ItemStack moved = item.clone().asQuantity(amount);
-                    InventoryMoveItemEvent newEvent = new HSInventoryMoveItemEvent(hopper.getInventory(), moved, event.getDestination(), event.getInitiator() == hopper.getInventory());
-                    if (newEvent.callEvent()) {
-                        item.subtract(amount);
-                        event.getDestination().addItem(moved); // todo: make sure inventory isn't full before moving
-                    }
-
-                    break;
-                }
-            }, 1);
-
+        if (!(event.getDestination().getHolder(false) instanceof Hopper hopper && hopper.getPersistentDataContainer().has(plugin.getHopperKey()))) {
             return;
-        }
-
-        if (event.getDestination().getHolder(false) instanceof Hopper hopper) {
-            if (!hopper.getPersistentDataContainer().has(plugin.getHopperKey(), PersistentDataType.BYTE)) {
-                return;
-            }
-
-            event.setCancelled(true);
-            Inventory inventory = event.getSource().getHolder(false).getInventory();
-            int amount = event.getItem().getAmount();
-
-            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-                for (ItemStack item : inventory.getContents()) {
-                    if (item == null || !hopper.getInventory().containsAtLeast(item, 1)) {
-                        continue;
-                    }
-
-                    ItemStack moved = item.clone().asQuantity(amount);
-                    InventoryMoveItemEvent newEvent = new HSInventoryMoveItemEvent(event.getSource(), moved, hopper.getInventory(), event.getInitiator() == event.getSource());
-                    if (newEvent.callEvent()) {
-                        item.subtract(amount);
-                        event.getDestination().addItem(moved); // todo: make sure inventory isn't full before moving
-                    }
-                }
-            }, 1);
         }
     }
 }
